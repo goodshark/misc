@@ -1,10 +1,7 @@
 package test;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.hbase.HBaseConfiguration;
-import org.apache.hadoop.hbase.HColumnDescriptor;
-import org.apache.hadoop.hbase.HTableDescriptor;
-import org.apache.hadoop.hbase.TableName;
+import org.apache.hadoop.hbase.*;
 import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.util.Bytes;
 
@@ -79,6 +76,36 @@ public class Test {
         table.close();
     }
 
+    private void getData() throws Exception {
+        Table table = connection.getTable(TableName.valueOf(TABLE));
+        Get get = new Get(Bytes.toBytes(ROWKEY+"-1"));
+        get.addColumn(Bytes.toBytes(familyNames[0]), Bytes.toBytes(COL));
+        Result result = table.get(get);
+        byte[] val = result.getValue(Bytes.toBytes(familyNames[0]), Bytes.toBytes(COL));
+        System.out.println("get value: " + Bytes.toString(val));
+        table.close();
+    }
+
+    private void getListData() throws Exception {
+        Table table = connection.getTable(TableName.valueOf(TABLE));
+        List<Get> gets = new ArrayList<>();
+        for (int i = 0; i < 3; i++) {
+            Get get = new Get(Bytes.toBytes(ROWKEY+"-"+Integer.toString(i)));
+            get.addColumn(Bytes.toBytes(familyNames[0]), Bytes.toBytes("c1"));
+            gets.add(get);
+        }
+        Result[] results = table.get(gets);
+        for (int i = 0; i < results.length; i++)
+            System.out.println(results[i]);
+
+        // get whole row
+        Get get = new Get(Bytes.toBytes(ROWKEY+"-"+Integer.toString(0)));
+        Result result = table.get(get);
+        System.out.println(result);
+
+        table.close();
+    }
+
     private void postOp() throws Exception {
         connection.close();
     }
@@ -98,6 +125,10 @@ public class Test {
         System.out.println("insert bunch data done");
         test.atomInsertData();
         System.out.println("check and put data done");
+        test.getData();
+        System.out.println("get data done");
+        test.getListData();
+        System.out.println("get list data done");
 
         test.postOp();
     }
