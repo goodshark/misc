@@ -8,6 +8,9 @@ import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.util.Bytes;
 
+import java.util.ArrayList;
+import java.util.List;
+
 
 public class Test {
     private final String ZK = "127.0.0.1:2181";
@@ -15,9 +18,9 @@ public class Test {
     private final String TABLE = "test-table";
     private String[] familyNames = {"f-1", "f-2"};
 
-    private final String ROWKEY = "row-1";
+    private final String ROWKEY = "row";
     private final String COL = "c1";
-    private final String VAL = "val-1";
+    private final String VAL = "val";
 
     private Connection connection;
 
@@ -36,9 +39,21 @@ public class Test {
 
     private void insertSingleData() throws Exception {
         Table table = connection.getTable(TableName.valueOf(TABLE));
-        Put put = new Put(Bytes.toBytes(ROWKEY));
-        put.addColumn(Bytes.toBytes(familyNames[0]), Bytes.toBytes(COL), Bytes.toBytes(VAL));
+        Put put = new Put(Bytes.toBytes(ROWKEY+"-1"));
+        put.addColumn(Bytes.toBytes(familyNames[0]), Bytes.toBytes(COL), Bytes.toBytes(VAL+"-singleData"));
         table.put(put);
+        table.close();
+    }
+
+    private void insertBunchData() throws Exception {
+        Table table = connection.getTable(TableName.valueOf(TABLE));
+        List<Put> puts = new ArrayList<>();
+        for (int i = 0; i < 3; i++) {
+            Put put = new Put(Bytes.toBytes(ROWKEY+"-"+Integer.toString(i)));
+            put.addColumn(Bytes.toBytes(familyNames[0]), Bytes.toBytes(COL), Bytes.toBytes(VAL+"-"+Integer.toString(i)));
+            puts.add(put);
+        }
+        table.put(puts);
         table.close();
     }
 
@@ -53,10 +68,12 @@ public class Test {
 //        conf.set("hbase.master", test.MASTER);
         test.connection = ConnectionFactory.createConnection(conf);
 
-        System.out.println("start create table");
         test.createTable();
-        System.out.println("start insert data");
+        System.out.println("create table done");
         test.insertSingleData();
+        System.out.println("insert single data done");
+        test.insertBunchData();
+        System.out.println("insert bunch data done");
 
         test.postOp();
     }

@@ -1,5 +1,7 @@
 *.class
 *.iml
+*.MF
+
 out/
 target/
 .idea/
