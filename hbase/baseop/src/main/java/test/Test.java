@@ -106,6 +106,32 @@ public class Test {
         table.close();
     }
 
+    private void deleteData() throws Exception {
+        // delete latest version, older version will stay
+        Table table = connection.getTable(TableName.valueOf(TABLE));
+        Delete delete = new Delete(Bytes.toBytes(ROWKEY+"-0"));
+        delete.addColumn(Bytes.toBytes(familyNames[0]), Bytes.toBytes(COL));
+        table.delete(delete);
+        table.close();
+    }
+
+    private void deleteListData() throws Exception {
+        // delete latest version, older version will stay
+        Table table = connection.getTable(TableName.valueOf(TABLE));
+        List<Delete> deletes = new ArrayList<>();
+        Delete delete = new Delete(Bytes.toBytes(ROWKEY+"-1"));
+        deletes.add(delete);
+        delete = new Delete(Bytes.toBytes(ROWKEY+"-2"));
+        delete.addColumn(Bytes.toBytes(familyNames[0]), Bytes.toBytes(COL));
+        deletes.add(delete);
+        // delete all version
+        delete = new Delete(Bytes.toBytes(ROWKEY+"-atom"));
+        delete.addColumns(Bytes.toBytes(familyNames[0]), Bytes.toBytes(COL));
+
+        table.delete(delete);
+        table.close();
+    }
+
     private void postOp() throws Exception {
         connection.close();
     }
@@ -129,6 +155,10 @@ public class Test {
         System.out.println("get data done");
         test.getListData();
         System.out.println("get list data done");
+        test.deleteData();
+        System.out.println("delete data done");
+        test.deleteListData();
+        System.out.println("delete list data done");
 
         test.postOp();
     }
