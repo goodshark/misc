@@ -57,6 +57,28 @@ public class Test {
         table.close();
     }
 
+    // atom insert operation only allow same row
+    private void atomInsertData() throws Exception {
+        Table table = connection.getTable(TableName.valueOf(TABLE));
+        Put put = new Put(Bytes.toBytes(ROWKEY+"-atom"));
+        put.addColumn(Bytes.toBytes(familyNames[0]), Bytes.toBytes(COL), Bytes.toBytes(VAL+"-new"));
+        // when row-family:col is null, then insert the put
+        boolean res = table.checkAndPut(Bytes.toBytes(ROWKEY+"-atom"), Bytes.toBytes(familyNames[0]), Bytes.toBytes(COL), null, put);
+        System.out.println("when old col is null, atom op status: " + res);
+
+        put = new Put(Bytes.toBytes(ROWKEY+"-atom"));
+        put.addColumn(Bytes.toBytes(familyNames[0]), Bytes.toBytes(COL), Bytes.toBytes(VAL+"-new-2"));
+        res = table.checkAndPut(Bytes.toBytes(ROWKEY+"-atom"), Bytes.toBytes(familyNames[0]), Bytes.toBytes(COL), Bytes.toBytes(VAL+"-new"), put);
+        System.out.println("when old col is VAL-new, atom op status: " + res);
+
+        put = new Put(Bytes.toBytes(ROWKEY+"-atom"));
+        put.addColumn(Bytes.toBytes(familyNames[0]), Bytes.toBytes(COL), Bytes.toBytes(VAL+"-foobar"));
+        res = table.checkAndPut(Bytes.toBytes(ROWKEY+"-atom"), Bytes.toBytes(familyNames[0]), Bytes.toBytes(COL), Bytes.toBytes(VAL+"-hehe"), put);
+        System.out.println("when old col is VAL-hehe, atom op status: " + res);
+
+        table.close();
+    }
+
     private void postOp() throws Exception {
         connection.close();
     }
@@ -74,6 +96,8 @@ public class Test {
         System.out.println("insert single data done");
         test.insertBunchData();
         System.out.println("insert bunch data done");
+        test.atomInsertData();
+        System.out.println("check and put data done");
 
         test.postOp();
     }
