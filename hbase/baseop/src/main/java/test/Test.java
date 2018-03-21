@@ -164,6 +164,55 @@ public class Test {
         table.close();
     }
 
+    private void scanData() throws Exception {
+        Table table = connection.getTable(TableName.valueOf(TABLE));
+
+        Scan scan = new Scan();
+        ResultScanner scanner = table.getScanner(scan);
+        System.out.println("========= scan all rows =========");
+        for (Result result: scanner) {
+            System.out.println("result: " + result);
+        }
+
+        scan = new Scan();
+        scan.addFamily(Bytes.toBytes(familyNames[0]));
+        scanner = table.getScanner(scan);
+        System.out.println("========= scan one family-column rows =========");
+        for (Result result: scanner) {
+            System.out.println("result: " + result);
+        }
+
+        scan = new Scan();
+        scan.addColumn(Bytes.toBytes(familyNames[0]), Bytes.toBytes(COL));
+        scanner = table.getScanner(scan);
+        System.out.println("========= scan one CELL rows =========");
+        for (Result result: scanner) {
+            System.out.println("result: " + result);
+        }
+
+        scan = new Scan();
+        scan.setStartRow(Bytes.toBytes(ROWKEY+"-0"));
+        scan.setStopRow(Bytes.toBytes(ROWKEY+"-2"));
+        scan.addColumn(Bytes.toBytes(familyNames[0]), Bytes.toBytes(COL));
+        scanner = table.getScanner(scan);
+        System.out.println("========= scan one CELL between these rows =========");
+        for (Result result: scanner) {
+            System.out.println("result: " + result);
+        }
+    }
+
+    private void scanCacheData() throws Exception {
+        Table table = connection.getTable(TableName.valueOf(TABLE));
+        Scan scan = new Scan();
+        scan.setCaching(5);
+        scan.setBatch(2);
+        ResultScanner scanner = table.getScanner(scan);
+        for (Result result: scanner) {
+            System.out.println("result: " + result);
+        }
+        table.close();
+    }
+
     private void postOp() throws Exception {
         connection.close();
     }
@@ -171,6 +220,8 @@ public class Test {
     public static void main(String[] args) throws Exception {
         Test test = new Test();
         Configuration conf = HBaseConfiguration.create();
+        System.out.println("scanner timeout: " + conf.getLong(HConstants.HBASE_CLIENT_SCANNER_TIMEOUT_PERIOD, -1));
+        System.out.println("scanner caching: " + conf.getLong(HConstants.HBASE_CLIENT_SCANNER_CACHING, -1));
         conf.set("hbase.zookeeper.quorum", test.ZK);
 //        conf.set("hbase.master", test.MASTER);
         test.connection = ConnectionFactory.createConnection(conf);
@@ -193,6 +244,10 @@ public class Test {
         System.out.println("delete list data done");
         test.batchOperation();
         System.out.println("batch handle data done");
+        test.scanData();
+        System.out.println("scan data done");
+        test.scanCacheData();
+        System.out.println("scan cache data done");
 
         test.postOp();
     }
