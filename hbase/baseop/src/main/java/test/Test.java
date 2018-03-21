@@ -132,6 +132,38 @@ public class Test {
         table.close();
     }
 
+    // same as checkAndPut
+    private void checkAndDelete() throws Exception {
+        Table table = connection.getTable(TableName.valueOf(TABLE));
+    }
+
+    private void batchOperation() throws Exception {
+        Table table = connection.getTable(TableName.valueOf(TABLE));
+        List<Row> batchs = new ArrayList<>();
+        Put put = new Put(Bytes.toBytes(ROWKEY+"-foobar"));
+        put.addColumn(Bytes.toBytes(familyNames[0]), Bytes.toBytes(COL), Bytes.toBytes("jim"));
+        batchs.add(put);
+        Get get = new Get(Bytes.toBytes(ROWKEY+"-1"));
+        get.addColumn(Bytes.toBytes(familyNames[0]), Bytes.toBytes(COL));
+        batchs.add(get);
+        // this Get has wrong column family, need catch exception while batching
+        get = new Get(Bytes.toBytes(ROWKEY+"-1"));
+        get.addFamily(Bytes.toBytes("wrong"));
+        batchs.add(get);
+
+        Object[] results = new Object[batchs.size()];
+        try {
+            table.batch(batchs, results);
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+
+        // the 3rd result will print exception that has noColumnFamily
+        for (int i = 0; i < results.length; i++)
+            System.out.println("index " + Integer.toString(i) + ": " + results[i].getClass() + ", has: " + results[i]);
+        table.close();
+    }
+
     private void postOp() throws Exception {
         connection.close();
     }
@@ -159,6 +191,8 @@ public class Test {
         System.out.println("delete data done");
         test.deleteListData();
         System.out.println("delete list data done");
+        test.batchOperation();
+        System.out.println("batch handle data done");
 
         test.postOp();
     }
