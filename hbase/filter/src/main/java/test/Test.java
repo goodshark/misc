@@ -1,11 +1,16 @@
 package test;
 
+import com.google.protobuf.InvalidProtocolBufferException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.*;
 import org.apache.hadoop.hbase.client.*;
+import org.apache.hadoop.hbase.exceptions.DeserializationException;
 import org.apache.hadoop.hbase.filter.*;
+import org.apache.hadoop.hbase.protobuf.generated.FilterProtos;
+import org.apache.hadoop.hbase.util.ByteStringer;
 import org.apache.hadoop.hbase.util.Bytes;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -281,7 +286,27 @@ public class Test {
         table.close();
     }*/
 
+    private void filterList() throws Exception {
+        Table table = connection.getTable(TableName.valueOf(TABLE));
+        Scan scan = new Scan();
+        List<Filter> filters = new ArrayList<>();
 
+        Filter rowFilter1 = new RowFilter(CompareFilter.CompareOp.GREATER_OR_EQUAL, new BinaryComparator(Bytes.toBytes(ROWKEY+"-1")));
+        filters.add(rowFilter1);
+        Filter rowFilter2 = new RowFilter(CompareFilter.CompareOp.LESS_OR_EQUAL, new BinaryComparator(Bytes.toBytes(ROWKEY+"-2")));
+        filters.add(rowFilter2);
+        Filter qualifierFilter= new QualifierFilter(CompareFilter.CompareOp.EQUAL, new BinaryComparator(Bytes.toBytes(COL)));
+        filters.add(qualifierFilter);
+
+        FilterList filterList = new FilterList(filters);
+        scan.setFilter(filterList);
+        ResultScanner scanner = table.getScanner(scan);
+        for (Result result: scanner) {
+            for (Cell cell: result.rawCells()) {
+                System.out.println("filter list cell: " + cell);
+            }
+        }
+    }
 
     public static void main(String[] args) throws Exception {
         Test test = new Test();
@@ -315,5 +340,7 @@ public class Test {
         System.out.println("col page filter done");
         test.colPrefixFilter();
         System.out.println("col prefix filter done");
+        test.filterList();
+        System.out.println("filter list done");
     }
 }
