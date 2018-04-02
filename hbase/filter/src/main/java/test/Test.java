@@ -308,6 +308,29 @@ public class Test {
         }
     }
 
+
+    // counters not filter
+    private void singleCounter() throws Exception {
+        Table table = connection.getTable(TableName.valueOf(TABLE));
+        long res = table.incrementColumnValue(Bytes.toBytes(ROWKEY+"-cnt"), Bytes.toBytes(familyNames[0]), Bytes.toBytes(COL), 1);
+        System.out.println("after increment 1, result: " + res);
+        res = table.incrementColumnValue(Bytes.toBytes(ROWKEY+"-cnt"), Bytes.toBytes(familyNames[0]), Bytes.toBytes(COL), -1);
+        System.out.println("after increment -1, result: " + res);
+        table.close();
+    }
+
+    private void multiCounter() throws Exception {
+        Table table = connection.getTable(TableName.valueOf(TABLE));
+        Increment increment = new Increment(Bytes.toBytes(ROWKEY+"-cnt"));
+        increment.addColumn(Bytes.toBytes(familyNames[0]), Bytes.toBytes(COL), 2);
+        increment.addColumn(Bytes.toBytes(familyNames[1]), Bytes.toBytes(COL), 2);
+        Result result = table.increment(increment);
+        for (Cell cell: result.rawCells()) {
+            System.out.println("cell: " + cell + ", value: " + Bytes.toLong(cell.getValueArray(), cell.getValueOffset(), cell.getValueLength()));
+        }
+        table.close();
+    }
+
     public static void main(String[] args) throws Exception {
         Test test = new Test();
         Configuration conf = HBaseConfiguration.create();
@@ -342,5 +365,9 @@ public class Test {
         System.out.println("col prefix filter done");
         test.filterList();
         System.out.println("filter list done");
+        test.singleCounter();
+        System.out.println("single counter done");
+        test.multiCounter();
+        System.out.println("multi counter done");
     }
 }
