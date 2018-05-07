@@ -26,6 +26,8 @@ public class BaseMapper extends Mapper<LongWritable, Text, Text, IntWritable> {
         } else {
             temperatue = Integer.parseInt(line.substring(TEMPERA_START_POSITION, TEMPERA_START_POSITION+TEMPERA_WIDTH));
         }
+        // test counter
+        context.getCounter("test counter group", "test").increment(1);
         String quality = line.substring(QUAILTY_START_POSITION, QUAILTY_START_POSITION+1);
         // check temperatue and quality is legal
         if (temperatue != MISSING && quality.matches("[01459]"))
